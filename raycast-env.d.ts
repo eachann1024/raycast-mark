@@ -8,8 +8,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
-  /** Dedicated Data Directory - 专用数据目录；已导入 goose-mark 书签。留空则用 supportPath/marks-library。 */
-  "dataDirectory": string,
+  /** Dedicated Data Directory - 专用数据目录。留空则用 supportPath/marks-library。 */
+  "dataDirectory"?: string,
   /** AI Protocol - Optional direct BYOK service */
   "aiProtocol": "openai-responses" | "openai-compatible" | "anthropic",
   /** AI Base URL - HTTPS endpoint including API prefix, e.g. https://api.openai.com/v1 */
