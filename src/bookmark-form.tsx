@@ -88,7 +88,9 @@ export function BookmarkForm({
   const [url, setUrl] = useState(bookmark?.url ?? seed?.url ?? "");
   const [title, setTitle] = useState(bookmark?.title ?? seed?.title ?? "");
   const [desc, setDesc] = useState(bookmark?.desc ?? seed?.desc ?? "");
-  const [tagsText, setTagsText] = useState((bookmark?.tags ?? seed?.tags ?? []).join(", "));
+  const [tagsText, setTagsText] = useState(
+    (bookmark?.tags ?? seed?.tags ?? []).join(", "),
+  );
   const tags = tagsText
     .split(/[,，]/)
     .map((tag) => tag.trim())

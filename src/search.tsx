@@ -36,7 +36,7 @@ import {
 import type { Bookmark, LibraryState, Mutation, Visit } from "./model.ts";
 import { ensureIconForBookmark, iconImageSource } from "./icon-service.ts";
 import { commit, configureDirectory, readLibrary } from "./repository.ts";
-import { AIError, aiConfigFromPreferences, suggestMetadata } from "./ai.ts";
+import { aiConfigFromPreferences, suggestMetadata } from "./ai.ts";
 
 function listIcon(bookmark: Bookmark) {
   const bound = iconImageSource(bookmark.icon);
@@ -584,10 +584,17 @@ export default function Command() {
                     onAction={() =>
                       void (async () => {
                         const url = query.trim();
-                        let seed = { url, title: hostOf(url), desc: undefined as string | undefined, tags: undefined as string[] | undefined };
+                        let seed = {
+                          url,
+                          title: hostOf(url),
+                          desc: undefined as string | undefined,
+                          tags: undefined as string[] | undefined,
+                        };
                         try {
                           const config = aiConfigFromPreferences(preferences);
-                          const suggestion = await suggestMetadata(config, { url });
+                          const suggestion = await suggestMetadata(config, {
+                            url,
+                          });
                           seed = {
                             url,
                             title: suggestion.title?.trim() || hostOf(url),
