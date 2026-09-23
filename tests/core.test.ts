@@ -42,6 +42,7 @@ import {
   replayEvents,
   resolveConflicts,
 } from "../src/repository.ts";
+import { setSharedJsonSource, setSharedJsonStorage, withSharedJsonWrite } from "../src/shared-json-storage.ts";
 
 const bookmark = (id = "b1"): Bookmark => ({
   id,
@@ -87,6 +88,25 @@ async function raw(dir: string, e: LibraryEvent) {
 function errorCode(code: string) {
   return (e: unknown) => (e as { code?: string }).code === code;
 }
+
+test("shared JSON: existing lock is never removed by another writer", async () =>
+  fixture(async (dir, parent) => {
+    const items = new Map<string, string>();
+    setSharedJsonStorage({
+      getItem: async (key: string) => items.get(key),
+      setItem: async (key: string, value: string) => { items.set(key, value); },
+    } as unknown as Parameters<typeof setSharedJsonStorage>[0]);
+    try {
+      const file = path.join(parent, "shared.json");
+      const initial = JSON.stringify({ schemaVersion: 1, source: "raycast-mark", groups: emptyCatalog().groups, bookmarks: [] });
+      await fs.writeFile(file, initial);
+      await setSharedJsonSource(file, initial, initial);
+      await fs.writeFile(`${file}.lock`, "another writer");
+      await assert.rejects(withSharedJsonWrite(dir, async () => ({ state: await readLibrary(dir) })));
+      assert.equal(await fs.readFile(`${file}.lock`, "utf8"), "another writer");
+      assert.equal(await fs.readFile(file, "utf8"), initial);
+    } finally { setSharedJsonStorage(); }
+  }));
 
 test("templateFields / resolveLaunchUrl: multiple parameters, safe encoding and authority rejection", () => {
   assert.deepEqual(
@@ -431,7 +451,7 @@ function legacy() {
   };
 }
 
-test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/usage/passive icon", async () =>
+test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/usage/persisted icon", async () =>
   fixture(async (dir, parent) => {
     const source = legacy();
     const plan = previewJsonImport(
@@ -439,21 +459,20 @@ test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/
       await readLibrary(dir),
     );
     assert.equal(plan.counts.attachments, 1);
-    assert.match(plan.warnings.join(), /不读取/);
+    assert.match(plan.warnings.join(), /落盘/);
     const applied = await applyJsonImport(dir, plan, {});
     const exported = JSON.parse(exportJson(applied.state));
+    const withoutIcon = ({ icon, iconMatchedAt, ...record }: Bookmark) => record;
     assert.deepEqual(
-      exported.bookmarks,
-      source.bookmarks.sort((a, b) => a.id.localeCompare(b.id)),
+      exported.bookmarks.map(withoutIcon),
+      source.bookmarks.sort((a, b) => a.id.localeCompare(b.id)).map(withoutIcon),
     );
+    assert.ok(exported.bookmarks.find((b: Bookmark) => b.id === "b1")?.icon?.path?.startsWith(path.join(dir, "icons")));
     assert.deepEqual(exported.groups, source.groups);
-    assert.equal(exported.source, "raycast-marks");
+    assert.equal(exported.source, "raycast-mark");
     assert.ok(!exportJson(applied.state).includes("apiKey"));
     await saveJsonExport(dir, path.join(parent, "backup.json"));
-    await assert.rejects(
-      saveJsonExport(dir, path.join(parent, "backup.json")),
-      errorCode("WRITE_FAILED"),
-    );
+    await assert.rejects(saveJsonExport(dir, path.join(parent, "backup.json")), errorCode("WRITE_FAILED"));
     await assert.rejects(
       saveJsonExport(dir, path.join(dir, "backup.json")),
       errorCode("INVALID_INPUT"),
@@ -466,7 +485,60 @@ test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/
       previewJsonImport(JSON.stringify(exported), await readLibrary(newDir)),
       {},
     );
-    assert.deepEqual(second.state.bookmarks, applied.state.bookmarks);
+    assert.deepEqual(second.state.bookmarks.map(withoutIcon), applied.state.bookmarks.map(withoutIcon));
+    assert.ok(second.state.bookmarks.find((b) => b.id === "b1")?.icon?.path?.startsWith(path.join(newDir, "icons")));
+  }));
+
+test("JSON import never reads a legacy file icon path outside the library", async () =>
+  fixture(async (dir, parent) => {
+    const outsideIcon = path.join(parent, "untrusted.svg");
+    const secret = Buffer.from("do-not-import-this-file-content");
+    await fs.writeFile(outsideIcon, secret);
+    const source = legacy();
+    source.bookmarks[0]!.icon = { type: "file", path: outsideIcon };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    try {
+      const result = await applyJsonImport(
+        dir,
+        previewJsonImport(JSON.stringify(source), await readLibrary(dir)),
+        {},
+      );
+      const imported = result.state.bookmarks.find((item) => item.id === source.bookmarks[0]!.id)!;
+      assert.notEqual(imported.icon?.path, outsideIcon);
+      assert.ok(imported.icon?.path?.startsWith(path.join(dir, "icons")));
+      assert.notDeepEqual(await fs.readFile(imported.icon!.path!), secret);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }));
+
+test("portable icon backup round-trips into another library", async () =>
+  fixture(async (dir, parent) => {
+    const bytes = Buffer.from(`<svg xmlns='http://www.w3.org/2000/svg'>${" ".repeat(1_100_000)}</svg>`);
+    const icons = path.join(dir, "icons");
+    await fs.mkdir(icons, { recursive: true });
+    const file = path.join(icons, "test.svg");
+    await fs.writeFile(file, bytes);
+    await commit(dir, {
+      expectedHeads: (await readLibrary(dir)).heads,
+      mutations: [{ entity: "bookmark", entityId: "b1", baseHeads: [], value: { ...bookmark(), icon: { type: "file", path: file } } }],
+    });
+    const backup = path.join(parent, "portable.json");
+    await saveJsonExport(dir, backup);
+    await assert.rejects(saveJsonExport(dir, backup), errorCode("WRITE_FAILED"));
+    const json = await fs.readFile(backup, "utf8");
+    assert.match(json, /data:image\/svg\+xml;base64,/);
+    assert.ok(!json.includes(file));
+    const second = path.join(parent, "second");
+    await fs.mkdir(second);
+    await configureDirectory(second, parent);
+    const plan = previewJsonImport(json, await readLibrary(second));
+    const result = await applyJsonImport(second, plan, {});
+    const copied = result.state.bookmarks[0]?.icon?.path;
+    assert.ok(copied);
+    assert.ok(copied.startsWith(path.join(second, "icons")));
+    assert.deepEqual(await fs.readFile(copied), bytes);
   }));
 
 test("JSON merge requires per-ID choice, preserves usage base, no double visits or silent same-URL dedup", async () =>
@@ -502,7 +574,7 @@ test("JSON merge requires per-ID choice, preserves usage base, no double visits 
       1100,
     );
     assert.equal(
-      previewJsonImport(JSON.stringify(incoming), applied.state).mutations
+      previewJsonImport(exportJson(applied.state), applied.state).mutations
         .length,
       0,
     );
