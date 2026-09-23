@@ -543,6 +543,28 @@ export function exportJson(state: LibraryState): string {
     2,
   );
 }
+/** Export the same uTools-compatible JSON, with local icon files embedded. */
+export async function exportPortableJson(directory: string, state: LibraryState): Promise<string> {
+  const payload = JSON.parse(exportJson(state)) as { bookmarks: Bookmark[] };
+  const iconsRoot = await fs.realpath(path.join(directory, "icons")).catch(() => path.join(directory, "icons"));
+  const mime: Record<string, string> = {
+    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+    gif: "image/gif", svg: "image/svg+xml", ico: "image/x-icon",
+  };
+  for (const bookmark of payload.bookmarks) {
+    const icon = bookmark.icon;
+    if (icon?.type !== "file" || !icon.path) continue;
+    const file = await fs.realpath(icon.path).catch(() => invalid(t("图标文件已丢失，无法完整导出")));
+    const relative = path.relative(iconsRoot, file);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) invalid(t("图标不在本地库目录，无法安全导出"));
+    const kind = mime[path.extname(file).slice(1).toLowerCase()];
+    if (!kind || (await fs.stat(file)).size > 2 * 1024 * 1024) invalid(t("图标格式或大小无效"));
+    bookmark.icon = { type: "custom", data: `data:${kind};base64,${(await fs.readFile(file)).toString("base64")}`, bgColor: icon.bgColor };
+  }
+  const data = JSON.stringify(payload, null, 2);
+  if (Buffer.byteLength(data) > MAX_EVENT_BYTES) invalid(t("备份超过 10 MiB，无法完整导出"));
+  return data;
+}
 /** Explicit user destination only. Refuses existing files and all paths inside this library. */
 export async function saveJsonExport(
   directory: string,
@@ -559,8 +581,8 @@ export async function saveJsonExport(
       relative !== ".." &&
       !path.isAbsolute(relative))
   )
-    invalid("不能导出到事件数据目录");
-  const data = exportJson(await readLibrary(root));
+    invalid(t("不能导出到事件数据目录"));
+  const data = await exportPortableJson(root, await readLibrary(root));
   let handle;
   try {
     handle = await fs.open(target, "wx", 0o600);
