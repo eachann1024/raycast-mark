@@ -53,7 +53,7 @@
     {
       "name": "dataDirectory",
       "title": "Dedicated Data Directory",
-      "description": "专用数据目录。留空则用 supportPath/marks-library。",
+      "description": "Dedicated data directory. Leave blank to use supportPath/marks-library.",
       "type": "textfield",
       "required": false
     },
