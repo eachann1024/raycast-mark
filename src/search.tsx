@@ -8,13 +8,11 @@ import {
   Form,
   Icon,
   Keyboard,
-  LaunchType,
   List,
   Toast,
   confirmAlert,
   environment,
   getPreferenceValues,
-  launchCommand,
   open,
   openExtensionPreferences,
   showToast,
@@ -38,6 +36,7 @@ import type { Bookmark, LibraryState, Mutation, Visit } from "./model.ts";
 import { ensureIconForBookmark, iconImageSource } from "./icon-service.ts";
 import { commit, configureDirectory, readLibrary } from "./repository.ts";
 import { aiConfigFromPreferences, suggestMetadata } from "./ai.ts";
+import ManageData from "./manage-data.tsx";
 
 function listIcon(bookmark: Bookmark) {
   const bound = iconImageSource(bookmark.icon);
@@ -228,6 +227,7 @@ export default function Command() {
               icon={Icon.Gear}
               onAction={openExtensionPreferences}
             />
+            {root && state && <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />}
           </ActionPanel>
         }
       />
@@ -254,6 +254,7 @@ export default function Command() {
         markdown={t`# 本地库已暂停写入\n\n检测到不可读或不安全的数据，不会以空库覆盖本地文件，也不会展示未经校验的数据。\n\n${issues}\n\n数据目录：\`${root}\``}
         actions={
           <ActionPanel>
+            <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
             <Action
               title={t("重新加载")}
               icon={Icon.ArrowClockwise}
@@ -410,16 +411,11 @@ export default function Command() {
             />
           ))}
         {conflicted && (
-          <Action
-            title="解决冲突…"
+          <Action.Push
+            title={t("解决冲突…")}
             icon={Icon.Warning}
             shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
-            onAction={() =>
-              void launchCommand({
-                name: "manage-data",
-                type: LaunchType.UserInitiated,
-              })
-            }
+            target={<ManageData onClose={load} />}
           />
         )}
         {!conflicted && (
@@ -460,6 +456,7 @@ export default function Command() {
           />
         )}
 
+        <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
         <Action
           title={t("打开扩展设置")}
           icon={Icon.Gear}
@@ -643,6 +640,7 @@ export default function Command() {
                 icon={Icon.Gear}
                 onAction={openExtensionPreferences}
               />
+              <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
             </ActionPanel>
           }
         />

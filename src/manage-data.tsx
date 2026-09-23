@@ -80,7 +80,7 @@ function memberCount(
   ).length;
 }
 
-export default function Command() {
+export default function Command({ onClose }: { onClose?: () => void } = {}) {
   const preferences = getPreferenceValues<Preferences>();
   const { push } = useNavigation();
   const [root, setRoot] = useState<string>();
@@ -90,6 +90,8 @@ export default function Command() {
   const [resolutions, setResolutions] = useState<
     Record<string, { eventId: string; mutation: Mutation }>
   >({});
+
+  useEffect(() => () => onClose?.(), [onClose]);
 
   const load = useCallback(async () => {
     setIsLoading(true);

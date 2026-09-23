@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "raycast-mark",
-  "title": "Mark",
+  "title": "Goose Mark",
   "description": "Local bookmarks with favicon persistence and template URLs",
   "version": "0.1.0",
   "private": false,
@@ -16,18 +16,6 @@
       "name": "search",
       "title": "Search Marks",
       "description": "Search local bookmarks",
-      "mode": "view"
-    },
-    {
-      "name": "add-bookmark",
-      "title": "Add Bookmark",
-      "description": "Add a local bookmark",
-      "mode": "view"
-    },
-    {
-      "name": "manage-data",
-      "title": "Manage Marks Data",
-      "description": "Manage local library and conflicts",
       "mode": "view"
     }
   ],
