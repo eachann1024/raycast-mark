@@ -330,7 +330,7 @@ export function previewJsonImport(
     );
   if (counts.attachments)
     warnings.push(
-      `${counts.attachments} 个图标附件仅被动保留字段，不读取、复制或保证附件可用`,
+      t`${counts.attachments} 个图标附件将在导入时落盘；旧 file 路径不读取，改为使用站点图标`,
     );
   const merged = structuredClone(state.catalog);
   for (const g of catalog.groups) {
@@ -404,6 +404,7 @@ async function materializeIcon(
 ): Promise<Bookmark> {
   const icon = bookmark.icon;
   if (!icon) {
+    if (bookmark.isDeleted) return bookmark;
     const fileIcon = await fetchAndPersistIcon(
       directory,
       bookmark.url,
@@ -411,7 +412,10 @@ async function materializeIcon(
     );
     return { ...bookmark, icon: fileIcon, iconMatchedAt: Date.now() };
   }
-  if (icon.type === "file" && icon.path) return bookmark;
+  if (icon.type === "file") {
+    const fileIcon = await fetchAndPersistIcon(directory, bookmark.url, bookmark.title);
+    return { ...bookmark, icon: fileIcon, iconMatchedAt: Date.now() };
+  }
   if (icon.type === "remote" && icon.cache?.startsWith("data:image/")) {
     const fileIcon = await persistDataUrlIcon(
       directory,

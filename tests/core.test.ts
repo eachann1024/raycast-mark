@@ -469,6 +469,30 @@ test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/
     assert.deepEqual(second.state.bookmarks, applied.state.bookmarks);
   }));
 
+test("JSON import never reads a legacy file icon path outside the library", async () =>
+  fixture(async (dir, parent) => {
+    const outsideIcon = path.join(parent, "untrusted.svg");
+    const secret = Buffer.from("do-not-import-this-file-content");
+    await fs.writeFile(outsideIcon, secret);
+    const source = legacy();
+    source.bookmarks[0]!.icon = { type: "file", path: outsideIcon };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    try {
+      const result = await applyJsonImport(
+        dir,
+        previewJsonImport(JSON.stringify(source), await readLibrary(dir)),
+        {},
+      );
+      const imported = result.state.bookmarks.find((item) => item.id === source.bookmarks[0]!.id)!;
+      assert.notEqual(imported.icon?.path, outsideIcon);
+      assert.ok(imported.icon?.path?.startsWith(path.join(dir, "icons")));
+      assert.notDeepEqual(await fs.readFile(imported.icon!.path!), secret);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }));
+
 test("JSON merge requires per-ID choice, preserves usage base, no double visits or silent same-URL dedup", async () =>
   fixture(async (dir) => {
     const first = await applyJsonImport(
