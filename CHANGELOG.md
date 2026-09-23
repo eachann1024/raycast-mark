@@ -1,7 +1,8 @@
-# 更新日志
+# Goose Mark Changelog
 
-## 2026-09-23
+## [Initial Release] - {PR_MERGE_DATE}
 
-- 新增英文与简体中文界面选择；书签改为宫格展示，新增书签和数据管理统一从搜索主命令进入。
-- 可连接或新建共享 JSON 数据源；文件缺失、变化或与本地同时修改时阻断写入，避免静默覆盖。共享文件不保证多机实时同步或自动合并冲突。
-- 导出 JSON 内嵌本地图标，便于迁移；导入旧版 `file` 图标时不读取来源路径，改为尝试获取站点图标。
+- Search and manage local bookmarks in a grid from one command.
+- Import or export JSON with portable embedded icons and explicit conflict resolution.
+- Optionally use a shared JSON file; writes stop when the file is missing or has changed unexpectedly.
+- Default to English with optional Simplified Chinese interface text.

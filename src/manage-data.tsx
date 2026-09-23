@@ -259,11 +259,17 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
       <List.Section title={t("数据目录")}>
         <List.Item
           title={root}
-          subtitle={t("专用目录：本地配置项；切换只改变本机配置，不搬迁、不删除旧库")}
+          subtitle={t(
+            "专用目录：本地配置项；切换只改变本机配置，不搬迁、不删除旧库",
+          )}
           icon={Icon.Folder}
           accessories={[
             {
-              text: ready ? t("可写入") : conflicted ? t("只读：存在冲突") : t("只读"),
+              text: ready
+                ? t("可写入")
+                : conflicted
+                  ? t("只读：存在冲突")
+                  : t("只读"),
             },
             { text: t`书签 ${state.bookmarks.length}` },
           ]}
@@ -282,9 +288,18 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
               <Action.Push
                 title={t("连接共享 JSON 数据源…")}
                 icon={Icon.Link}
-                target={<SharedJsonForm root={root} state={state} onSaved={setState} />}
+                target={
+                  <SharedJsonForm
+                    root={root}
+                    state={state}
+                    onSaved={setState}
+                  />
+                }
               />
-              <Action.CopyToClipboard title={t("复制数据目录")} content={root} />
+              <Action.CopyToClipboard
+                title={t("复制数据目录")}
+                content={root}
+              />
               <Action
                 title={t("重新加载")}
                 icon={Icon.ArrowClockwise}
@@ -674,7 +689,10 @@ function CategoryForm({
   async function save() {
     const nextName = name.trim();
     if (!nextName) {
-      await showToast({ style: Toast.Style.Failure, title: t("请填写分类名称") });
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t("请填写分类名称"),
+      });
       return;
     }
     const catalog = structuredClone(state.catalog);
@@ -709,7 +727,10 @@ function CategoryForm({
             ? target.children.find((s) => s.id === subGroupId)
             : target;
         if (!child) {
-          await showToast({ style: Toast.Style.Failure, title: t("分类不存在") });
+          await showToast({
+            style: Toast.Style.Failure,
+            title: t("分类不存在"),
+          });
           return;
         }
         child.name = nextName;
@@ -842,7 +863,9 @@ function ConflictView({
               }
               subtitle={
                 catalog
-                  ? value.groups.map((g) => categoryTitle(g.id, g.name)).join(t("、"))
+                  ? value.groups
+                      .map((g) => categoryTitle(g.id, g.name))
+                      .join(t("、"))
                   : [
                       bookmark!.url,
                       bookmark!.desc ?? "",
@@ -953,7 +976,9 @@ function ImportFileForm({
     >
       <Form.Description
         title={t("接受的格式")}
-        text={t("本插件导出的 JSON，或 goose-mark / 旧 marks 的 {groups, bookmarks} 格式。remote/cache base64 图标会解码写入 icons/ 并转为 file；设置与 API Key 会被拒绝。")}
+        text={t(
+          "本插件导出的 JSON，或 goose-mark / 旧 marks 的 {groups, bookmarks} 格式。remote/cache base64 图标会解码写入 icons/ 并转为 file；设置与 API Key 会被拒绝。",
+        )}
       />
       <Form.FilePicker
         id="file"
@@ -1091,8 +1116,16 @@ function ImportPreview({
           icon={Icon.Checkmark}
           actions={
             <ActionPanel>
-              <Action title={t("应用导入")} icon={Icon.Checkmark} onAction={apply} />
-              <Action title={t("取消")} icon={Icon.XmarkCircle} onAction={pop} />
+              <Action
+                title={t("应用导入")}
+                icon={Icon.Checkmark}
+                onAction={apply}
+              />
+              <Action
+                title={t("取消")}
+                icon={Icon.XmarkCircle}
+                onAction={pop}
+              />
             </ActionPanel>
           }
         />
@@ -1133,7 +1166,9 @@ function ImportDifference({
     >
       <Form.Description
         title={t("说明")}
-        text={t("逐字段比较本地与导入值（含网址、删除状态、位置、描述、标签与完整分类结构）。选择后还需回到预览应用；现有访问统计不被导入值覆盖。")}
+        text={t(
+          "逐字段比较本地与导入值（含网址、删除状态、位置、描述、标签与完整分类结构）。选择后还需回到预览应用；现有访问统计不被导入值覆盖。",
+        )}
       />
       {[
         ...new Set([
@@ -1206,7 +1241,9 @@ function ExportForm({ root }: { root: string }) {
     >
       <Form.Description
         title={t("说明")}
-        text={t("只导出已验证且无冲突的数据；不包含 API 配置、数据目录路径或运行时设置。目标文件已存在时会拒绝写入，不覆盖。")}
+        text={t(
+          "只导出已验证且无冲突的数据；不包含 API 配置、数据目录路径或运行时设置。目标文件已存在时会拒绝写入，不覆盖。",
+        )}
       />
       <Form.FilePicker
         id="directory"
@@ -1280,7 +1317,9 @@ function DirectoryForm() {
     >
       <Form.Description
         title={t("只做校验")}
-        text={t("这里只读取所选目录做检查，不创建、不搬迁、不删除数据，也不会替你写入扩展设置（Raycast 未提供写 preference 的 API）。")}
+        text={t(
+          "这里只读取所选目录做检查，不创建、不搬迁、不删除数据，也不会替你写入扩展设置（Raycast 未提供写 preference 的 API）。",
+        )}
       />
       <Form.FilePicker
         id="directory"

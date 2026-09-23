@@ -247,7 +247,8 @@ export function previewJsonImport(
       "iconMatchFailedReason",
     ]);
     const bookmarkId = makeId(b.id);
-    if (seen.has(bookmarkId)) invalid(t("导入中书签 ID 重复，请先合并重复记录"));
+    if (seen.has(bookmarkId))
+      invalid(t("导入中书签 ID 重复，请先合并重复记录"));
     seen.add(bookmarkId);
     const indexed = index.get(bookmarkId) ?? [];
     let locs: Location[];
@@ -370,7 +371,9 @@ export function previewJsonImport(
     )
       counts.sameUrl++;
     if (local) {
-      warnings.push(t`已有 ID ${incoming.id}：保留本地访问统计，导入统计不覆盖`);
+      warnings.push(
+        t`已有 ID ${incoming.id}：保留本地访问统计，导入统计不覆盖`,
+      );
       const mutation = bookmarkMutation(state, incoming);
       if (
         canonical(mutation.value) ===
@@ -403,17 +406,13 @@ async function materializeIcon(
   bookmark: Bookmark,
 ): Promise<Bookmark> {
   const icon = bookmark.icon;
-  if (!icon) {
-    if (bookmark.isDeleted) return bookmark;
+  if (!icon) return bookmark;
+  if (icon.type === "file") {
     const fileIcon = await fetchAndPersistIcon(
       directory,
       bookmark.url,
       bookmark.title,
     );
-    return { ...bookmark, icon: fileIcon, iconMatchedAt: Date.now() };
-  }
-  if (icon.type === "file") {
-    const fileIcon = await fetchAndPersistIcon(directory, bookmark.url, bookmark.title);
     return { ...bookmark, icon: fileIcon, iconMatchedAt: Date.now() };
   }
   if (icon.type === "remote" && icon.cache?.startsWith("data:image/")) {
@@ -510,17 +509,50 @@ export async function applyJsonImport(
     if (!["local", "incoming"].includes(decisions[difference.entityKey]))
       invalid(t("请明确选择所有同 ID 差异"));
   const mutations: Mutation[] = [];
-  for (const m of plan.mutations) {
-    if (decisions[entityKey(m.entity, m.entityId)] === "local") continue;
-    if (m.entity === "bookmark") {
-      const bookmark = await materializeIcon(directory, m.value as Bookmark);
-      mutations.push({ ...m, value: validateBookmark(bookmark) });
-    } else {
-      mutations.push(m);
+  let staging: string | undefined;
+  let committing = false;
+  try {
+    for (const m of plan.mutations) {
+      if (decisions[entityKey(m.entity, m.entityId)] === "local") continue;
+      if (m.entity === "bookmark" && (m.value as Bookmark).icon) {
+        staging ??= await fs.mkdtemp(path.join(directory, "icons", ".import-"));
+        const bookmark = await materializeIcon(staging, m.value as Bookmark);
+        mutations.push({ ...m, value: validateBookmark(bookmark) });
+      } else {
+        mutations.push(m);
+      }
     }
+    // Keeping a local catalog may invalidate incoming locations; repository rejects the entire transaction.
+    committing = true;
+    const result = await commit(directory, {
+      mutations,
+      expectedHeads: plan.expectedHeads,
+    });
+    if (
+      staging &&
+      !mutations.some(
+        (m) =>
+          m.entity === "bookmark" &&
+          (m.value as Bookmark).icon?.path?.startsWith(`${staging}${path.sep}`),
+      )
+    )
+      await fs.rm(staging, { recursive: true, force: true });
+    return result;
+  } catch (error) {
+    // ponytail: Keep staged icons on ambiguous post-publication errors; reconcile them from events before automatic garbage collection.
+    if (
+      staging &&
+      (!committing ||
+        (error instanceof LibraryError &&
+          ["STALE_HEADS", "CONFLICT", "LIMIT", "INVALID_INPUT"].includes(
+            error.code,
+          )))
+    )
+      await fs
+        .rm(staging, { recursive: true, force: true })
+        .catch(() => undefined);
+    throw error;
   }
-  // Keeping a local catalog may invalidate incoming locations; repository rejects the entire transaction.
-  return commit(directory, { mutations, expectedHeads: plan.expectedHeads });
 }
 export function exportJson(state: LibraryState): string {
   ready(state);
@@ -544,25 +576,44 @@ export function exportJson(state: LibraryState): string {
   );
 }
 /** Export the same uTools-compatible JSON, with local icon files embedded. */
-export async function exportPortableJson(directory: string, state: LibraryState): Promise<string> {
+export async function exportPortableJson(
+  directory: string,
+  state: LibraryState,
+): Promise<string> {
   const payload = JSON.parse(exportJson(state)) as { bookmarks: Bookmark[] };
-  const iconsRoot = await fs.realpath(path.join(directory, "icons")).catch(() => path.join(directory, "icons"));
+  const iconsRoot = await fs
+    .realpath(path.join(directory, "icons"))
+    .catch(() => path.join(directory, "icons"));
   const mime: Record<string, string> = {
-    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
-    gif: "image/gif", svg: "image/svg+xml", ico: "image/x-icon",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+    svg: "image/svg+xml",
+    ico: "image/x-icon",
   };
   for (const bookmark of payload.bookmarks) {
     const icon = bookmark.icon;
     if (icon?.type !== "file" || !icon.path) continue;
-    const file = await fs.realpath(icon.path).catch(() => invalid(t("图标文件已丢失，无法完整导出")));
+    const file = await fs
+      .realpath(icon.path)
+      .catch(() => invalid(t("图标文件已丢失，无法完整导出")));
     const relative = path.relative(iconsRoot, file);
-    if (relative.startsWith("..") || path.isAbsolute(relative)) invalid(t("图标不在本地库目录，无法安全导出"));
+    if (relative.startsWith("..") || path.isAbsolute(relative))
+      invalid(t("图标不在本地库目录，无法安全导出"));
     const kind = mime[path.extname(file).slice(1).toLowerCase()];
-    if (!kind || (await fs.stat(file)).size > 2 * 1024 * 1024) invalid(t("图标格式或大小无效"));
-    bookmark.icon = { type: "custom", data: `data:${kind};base64,${(await fs.readFile(file)).toString("base64")}`, bgColor: icon.bgColor };
+    if (!kind || (await fs.stat(file)).size > 2 * 1024 * 1024)
+      invalid(t("图标格式或大小无效"));
+    bookmark.icon = {
+      type: "custom",
+      data: `data:${kind};base64,${(await fs.readFile(file)).toString("base64")}`,
+      bgColor: icon.bgColor,
+    };
   }
   const data = JSON.stringify(payload, null, 2);
-  if (Buffer.byteLength(data) > MAX_EVENT_BYTES) invalid(t("备份超过 10 MiB，无法完整导出"));
+  if (Buffer.byteLength(data) > MAX_EVENT_BYTES)
+    invalid(t("备份超过 10 MiB，无法完整导出"));
   return data;
 }
 /** Explicit user destination only. Refuses existing files and all paths inside this library. */

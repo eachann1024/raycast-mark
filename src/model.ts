@@ -268,7 +268,12 @@ export function validateBookmark(value: unknown): Bookmark {
     const icon: Icon = { type };
     for (const k of [...fields, "bgColor"])
       if (i[k] !== undefined)
-        Object.assign(icon, { [k]: text(i[k], k === "data" || k === "cache" ? 3 * 1024 * 1024 : 1024 * 1024) });
+        Object.assign(icon, {
+          [k]: text(
+            i[k],
+            k === "data" || k === "cache" ? 3 * 1024 * 1024 : 1024 * 1024,
+          ),
+        });
     if (i.fetchedAt !== undefined) icon.fetchedAt = timestamp(i.fetchedAt);
     if (typeof i[fields[0]] !== "string" || !i[fields[0]])
       invalid(t("图标字段无效"));

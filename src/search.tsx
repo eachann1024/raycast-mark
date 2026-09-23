@@ -105,7 +105,8 @@ export default function Command() {
       let library = await readLibrary(directory);
       setRoot(directory);
       setState(library);
-      if (library.status === "ready") library = await refreshSharedJson(directory, library);
+      if (library.status === "ready")
+        library = await refreshSharedJson(directory, library);
       setRoot(directory);
       setState(library);
       setFailure(undefined);
@@ -235,7 +236,8 @@ export default function Command() {
       .filter((bookmark) => matches(bookmark, query));
     if (query.trim() && !matched.length && scope !== "trash") {
       const fallback = state.bookmarks.filter(
-        (bookmark) => !bookmark.isDeleted && bookmark.allowUniversal === true,
+        (bookmark) =>
+          inScope(bookmark, scope) && bookmark.allowUniversal === true,
       );
       if (fallback.length) return { items: fallback, fallback: true };
     }
@@ -262,7 +264,13 @@ export default function Command() {
               icon={Icon.Gear}
               onAction={openExtensionPreferences}
             />
-            {root && state && <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />}
+            {root && state && (
+              <Action.Push
+                title={t("设置与数据")}
+                icon={Icon.Gear}
+                target={<ManageData onClose={load} />}
+              />
+            )}
           </ActionPanel>
         }
       />
@@ -289,7 +297,11 @@ export default function Command() {
         markdown={t`# 本地库已暂停写入\n\n检测到不可读或不安全的数据，不会以空库覆盖本地文件，也不会展示未经校验的数据。\n\n${issues}\n\n数据目录：\`${root}\``}
         actions={
           <ActionPanel>
-            <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
+            <Action.Push
+              title={t("设置与数据")}
+              icon={Icon.Gear}
+              target={<ManageData onClose={load} />}
+            />
             <Action
               title={t("重新加载")}
               icon={Icon.ArrowClockwise}
@@ -514,7 +526,9 @@ export default function Command() {
       subtitle={hostOf(bookmark.url)}
       content={listIcon(bookmark)}
       keywords={[bookmark.url, bookmark.desc ?? "", ...bookmark.tags]}
-      accessory={bookmark.pinned ? { icon: Icon.Star, tooltip: t("收藏") } : undefined}
+      accessory={
+        bookmark.pinned ? { icon: Icon.Star, tooltip: t("收藏") } : undefined
+      }
       actions={actionsFor(bookmark)}
     />
   ));
@@ -535,20 +549,31 @@ export default function Command() {
           storeValue
         >
           <Grid.Dropdown.Item title={t("全部")} value="all" icon={Icon.List} />
-          <Grid.Dropdown.Item title={t("收藏")} value="favorites" icon={Icon.Star} />
+          <Grid.Dropdown.Item
+            title={t("收藏")}
+            value="favorites"
+            icon={Icon.Star}
+          />
           <Grid.Dropdown.Item
             title={t("最近使用")}
             value="recent"
             icon={Icon.ArrowClockwise}
           />
-          <Grid.Dropdown.Item title={t("回收站")} value="trash" icon={Icon.Trash} />
+          <Grid.Dropdown.Item
+            title={t("回收站")}
+            value="trash"
+            icon={Icon.Trash}
+          />
           {libraryState.catalog.groups
             .filter(
               (group) =>
                 !group.isDeleted && group.id !== TRASH_LOCATION.groupId,
             )
             .map((group) => (
-              <Grid.Dropdown.Section key={group.id} title={categoryTitle(group.id, group.name)}>
+              <Grid.Dropdown.Section
+                key={group.id}
+                title={categoryTitle(group.id, group.name)}
+              >
                 {group.children
                   .filter((sub) => !sub.isDeleted)
                   .map((sub) => (
@@ -567,9 +592,7 @@ export default function Command() {
       }
     >
       {visible.fallback ? (
-        <Grid.Section title={t("万能匹配回退")}>
-          {items}
-        </Grid.Section>
+        <Grid.Section title={t("万能匹配回退")}>{items}</Grid.Section>
       ) : (
         items
       )}
@@ -670,7 +693,11 @@ export default function Command() {
                 icon={Icon.Gear}
                 onAction={openExtensionPreferences}
               />
-              <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
+              <Action.Push
+                title={t("设置与数据")}
+                icon={Icon.Gear}
+                target={<ManageData onClose={load} />}
+              />
             </ActionPanel>
           }
         />

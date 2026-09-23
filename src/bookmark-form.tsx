@@ -237,9 +237,21 @@ export function BookmarkForm({
         t`协议：${config.protocol}`,
         t`服务：${endpoint}`,
         t`模型：${config.model || t("未配置")}`,
-        t`发送字段：${Object.keys(selected).map((key) => ({ title: t("标题"), url: t("网址"), desc: t("描述"), tags: t("标签") })[key as "title" | "url" | "desc" | "tags"]).join(t("、"))}`,
+        t`发送字段：${Object.keys(selected)
+          .map(
+            (key) =>
+              ({
+                title: t("标题"),
+                url: t("网址"),
+                desc: t("描述"),
+                tags: t("标签"),
+              })[key as "title" | "url" | "desc" | "tags"],
+          )
+          .join(t("、"))}`,
         "",
-        t("不会发送分类位置、访问统计或目录路径。API Key 仅作为认证头发送至上述服务，不进入提示词、书签库或导出；建议需你确认才填入表单。"),
+        t(
+          "不会发送分类位置、访问统计或目录路径。API Key 仅作为认证头发送至上述服务，不进入提示词、书签库或导出；建议需你确认才填入表单。",
+        ),
       ].join("\n"),
       primaryAction: { title: t("发送") },
     });
@@ -314,7 +326,12 @@ export function BookmarkForm({
         value={title}
         onChange={setTitle}
       />
-      <Form.TextArea id="desc" title={t("描述")} value={desc} onChange={setDesc} />
+      <Form.TextArea
+        id="desc"
+        title={t("描述")}
+        value={desc}
+        onChange={setDesc}
+      />
       <Form.TextField
         id="tags"
         title={t("标签")}
@@ -359,7 +376,9 @@ export function BookmarkForm({
       />
       <Form.Description
         title={t("AI 隐私")}
-        text={t("只有下面勾选的字段会在你主动触发时发送给所选协议的服务；建议不会自动保存。")}
+        text={t(
+          "只有下面勾选的字段会在你主动触发时发送给所选协议的服务；建议不会自动保存。",
+        )}
       />
       <Form.TagPicker
         id="aiFields"
@@ -414,12 +433,18 @@ function SuggestionDetail({
       }
     >
       <Form.Description title={t("服务")} text={endpoint} />
-      <Form.Description title={t("当前标题")} text={current.title || t("（空）")} />
+      <Form.Description
+        title={t("当前标题")}
+        text={current.title || t("（空）")}
+      />
       <Form.Description
         title={t("建议标题")}
         text={suggestion.title ?? t("（不修改）")}
       />
-      <Form.Description title={t("当前描述")} text={current.desc || t("（空）")} />
+      <Form.Description
+        title={t("当前描述")}
+        text={current.desc || t("（空）")}
+      />
       <Form.Description
         title={t("建议描述")}
         text={suggestion.desc ?? t("（不修改）")}

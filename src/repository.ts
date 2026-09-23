@@ -119,7 +119,10 @@ async function checkedDirectory(directory: string): Promise<string> {
       iconStat.isSymbolicLink() ||
       (await fs.realpath(icons)) !== icons
     )
-      throw new LibraryError("CORRUPT", t("icons 必须是专用目录内的真实子目录"));
+      throw new LibraryError(
+        "CORRUPT",
+        t("icons 必须是专用目录内的真实子目录"),
+      );
   } catch (e) {
     if ((e as NodeJS.ErrnoException)?.code === "ENOENT") {
       await fs.mkdir(icons, { mode: 0o700 });
@@ -494,7 +497,10 @@ async function writeTransaction(
   });
   const state = replayEvents(events);
   if (!sameHeads(state.heads, request.expectedHeads))
-    throw new LibraryError("STALE_HEADS", t("数据已变化，请重新打开表单或预览"));
+    throw new LibraryError(
+      "STALE_HEADS",
+      t("数据已变化，请重新打开表单或预览"),
+    );
   if (state.status !== "ready" && !resolving)
     throw new LibraryError("CONFLICT", t("存在未解决冲突，全库暂停普通写入"));
   if (resolving && request.visits?.length) invalid(t("解决冲突不能追加访问"));
@@ -562,7 +568,9 @@ export async function commit(
   directory: string,
   request: CommitRequest,
 ): Promise<CommitResult> {
-  return withSharedJsonWrite(directory, () => writeTransaction(directory, request, false));
+  return withSharedJsonWrite(directory, () =>
+    writeTransaction(directory, request, false),
+  );
 }
 /** Resolutions are complete chosen snapshots (including tombstones), based on ALL current heads. */
 export async function resolveConflicts(
@@ -570,9 +578,11 @@ export async function resolveConflicts(
   resolutions: Mutation[],
   expectedHeads: Heads,
 ): Promise<CommitResult> {
-  return withSharedJsonWrite(directory, () => writeTransaction(
-    directory,
-    { mutations: resolutions, expectedHeads },
-    true,
-  ));
+  return withSharedJsonWrite(directory, () =>
+    writeTransaction(
+      directory,
+      { mutations: resolutions, expectedHeads },
+      true,
+    ),
+  );
 }

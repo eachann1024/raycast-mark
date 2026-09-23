@@ -4,8 +4,6 @@ A local-first bookmark extension with add/edit/delete, two-level categories and 
 
 Only **Search Marks** is registered as a command. Add bookmarks and open Settings & Data from its action panel. The source for the data layer and its self-checks is in `src/repository.ts`, `src/import-export.ts`, `src/ai.ts`, and `tests/core.test.ts`. A successful build does not verify behavior inside Raycast or synchronization across Macs.
 
-See [`docs/migration-report.html`](docs/migration-report.html) for the migration comparison, data flow, iCloud risks, AI protocols, and earlier acceptance boundaries. That report may describe an earlier command layout; the current layout is below.
-
 ## Develop and install locally
 
 Node.js 22.14+ and npm 7+ are expected by the checked-in `package-lock.json`.
@@ -80,10 +78,8 @@ Settings & Data lists every concurrent version of each entity, including tombsto
 
 ## Not implemented in this version
 
-HTML/URL Wizard import, bulk actions, pinyin search, dead-link checks, page scraping, category ordering or dragging, emptying trash, copying descriptions, and moving a subcategory across parent categories or promoting it. The icon pipeline uses local files and site favicons rather than the old uTools attachment API. These are scope choices or adaptation work, not claims that Raycast cannot support them. See section 2 of `docs/migration-report.html` for the earlier comparison.
+HTML/URL Wizard import, bulk actions, pinyin search, dead-link checks, page scraping, category ordering or dragging, emptying trash, copying descriptions, and moving a subcategory across parent categories or promoting it. The icon pipeline uses local files and site favicons rather than the old uTools attachment API.
 
 ## Verification and publication status
 
-Build acceptance for this change is reported with the PR, not inferred from older results. Raycast UI, keyboard flow, form/grid behavior, returning from Settings & Data, real AI requests and key configuration, iCloud multi-device synchronization and placeholders, and Store review/publication have **not** been verified here. Earlier local test/build statements in the migration report are historical, not evidence for this revision.
-
-The current `package.json` declares `private: false`, `license: "MIT"`, and `author: "eachann_"`; [`LICENSE`](LICENSE) is present. These are repository metadata, not proof of Store approval or account ownership. This repository can remain private while its package metadata states `private: false`. Confirm author/account and Store requirements separately before submission.
+The build and lint checks do not verify the Raycast UI, real AI requests, iCloud synchronization across Macs, or Store review. The source is licensed under MIT.

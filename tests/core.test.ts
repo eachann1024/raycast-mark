@@ -169,7 +169,7 @@ test("publishEvent: fsync + hard link never overwrite, cleanup failure is commit
     const result = await publishEvent(dir, visit, async () => {
       throw new Error("simulated unlink failure");
     });
-    assert.match(result.cleanupWarning!, /本地已写入/);
+    assert.match(result.cleanupWarning!, /Saved locally/);
     assert.equal((await readLibrary(dir)).bookmarks[0].visits, 8);
     assert.equal((await readLibrary(dir)).bookmarks[0].visits, 8);
     assert.ok(
@@ -459,7 +459,7 @@ test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/
       await readLibrary(dir),
     );
     assert.equal(plan.counts.attachments, 1);
-    assert.match(plan.warnings.join(), /落盘/);
+    assert.match(plan.warnings.join(), /saved on import/);
     const applied = await applyJsonImport(dir, plan, {});
     const exported = JSON.parse(exportJson(applied.state));
     const withoutIcon = ({ icon, iconMatchedAt, ...record }: Bookmark) => record;
@@ -468,6 +468,7 @@ test("old JSON round trip: trash/prevLocations/multi-location/tags/pinned/times/
       source.bookmarks.sort((a, b) => a.id.localeCompare(b.id)).map(withoutIcon),
     );
     assert.ok(exported.bookmarks.find((b: Bookmark) => b.id === "b1")?.icon?.path?.startsWith(path.join(dir, "icons")));
+    assert.equal(exported.bookmarks.find((b: Bookmark) => b.id === "deleted")?.icon, undefined);
     assert.deepEqual(exported.groups, source.groups);
     assert.equal(exported.source, "raycast-mark");
     assert.ok(!exportJson(applied.state).includes("apiKey"));
@@ -560,7 +561,7 @@ test("JSON merge requires per-ID choice, preserves usage base, no double visits 
     incoming.bookmarks[0].title = "导入新标题";
     incoming.bookmarks[0].visits = 0;
     const plan = previewJsonImport(JSON.stringify(incoming), used.state);
-    assert.match(plan.warnings.join(), /导入统计不覆盖/);
+    assert.match(plan.warnings.join(), /imported counts do not overwrite/);
     await assert.rejects(
       applyJsonImport(dir, plan, {}),
       errorCode("INVALID_INPUT"),
@@ -584,10 +585,12 @@ test("JSON merge requires per-ID choice, preserves usage base, no double visits 
       commit(dir, { expectedHeads: applied.state.heads, mutations: [bad] }),
       errorCode("INVALID_INPUT"),
     );
+    const iconsBefore = await fs.readdir(path.join(dir, "icons"));
     await assert.rejects(
       applyJsonImport(dir, plan, { "bookmark:b1": "incoming" }),
       errorCode("STALE_HEADS"),
     );
+    assert.deepEqual(await fs.readdir(path.join(dir, "icons")), iconsBefore);
     const another = legacy();
     another.bookmarks[0].id = "new-id";
     for (const g of another.groups)
@@ -783,15 +786,15 @@ test("AI: no auth/rate/network fallback, explicit unsupported fallback, safe err
     await assert.rejects(suggestMetadata(config, { title: "t" }));
     globalThis.fetch = async () =>
       new Response("x".repeat(AI_MAX_RESPONSE_BYTES + 1));
-    await assert.rejects(suggestMetadata(config, { title: "t" }), /过大/);
+    await assert.rejects(suggestMetadata(config, { title: "t" }), /too large/);
     globalThis.fetch = async () => new Promise(() => undefined);
     await assert.rejects(
       suggestMetadata(config, { title: "t" }, AbortSignal.timeout(5)),
-      /取消或超时/,
+      /canceled or timed out/,
     );
     await assert.rejects(
       suggestMetadata({ ...config, apiKey: "" }, { title: "t" }),
-      /API Key/,
+      /API key/i,
     );
   } finally {
     globalThis.fetch = original;
@@ -878,7 +881,7 @@ test("AI internal timeout bounds a transport ignoring cancellation", async () =>
         },
         { title: "test" },
       ),
-      /取消或超时/,
+      /canceled or timed out/,
     );
   } finally {
     globalThis.fetch = original;
