@@ -64,7 +64,7 @@ function isCatalog(value: EntityValue): value is Catalog {
 function locationLabel(catalog: Catalog, location: Location): string {
   const group = catalog.groups.find((g) => g.id === location.groupId);
   const sub = group?.children.find((s) => s.id === location.subGroupId);
-  return `${group?.name ?? location.groupId} › ${sub?.name ?? location.subGroupId}`;
+  return `${group ? categoryTitle(group.id, group.name) : location.groupId} › ${sub ? categoryTitle(sub.id, sub.name) : location.subGroupId}`;
 }
 
 function memberCount(
@@ -226,7 +226,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
   if (!root || !state) {
     return (
       <List isLoading>
-        <List.EmptyView title="正在读取本地库" />
+        <List.EmptyView title={t("正在读取本地库")} />
       </List>
     );
   }
@@ -256,7 +256,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
       navigationTitle={t("设置与数据")}
       searchBarPlaceholder={t("搜索分类或功能")}
     >
-      <List.Section title="数据目录">
+      <List.Section title={t("数据目录")}>
         <List.Item
           title={root}
           subtitle={t("专用目录：本地配置项；切换只改变本机配置，不搬迁、不删除旧库")}
@@ -360,7 +360,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
       )}
 
       {ready && (
-        <List.Section title="分类">
+        <List.Section title={t("分类")}>
           <List.Item
             title={t("新建一级分类")}
             icon={Icon.Plus}
@@ -390,8 +390,8 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
             return (
               <Fragment key={group.id}>
                 <List.Item
-                  title={group.name}
-                  subtitle={`一级分类 · 书签 ${memberCount(state, group.id)}`}
+                  title={categoryTitle(group.id, group.name)}
+                  subtitle={t`一级分类 · 书签 ${memberCount(state, group.id)}`}
                   icon={Icon.Folder}
                   actions={
                     <ActionPanel>
@@ -457,9 +457,9 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
                 {group.children.map((sub) => (
                   <List.Item
                     key={sub.id}
-                    title={`↳ ${sub.name}`}
-                    subtitle={`子分类 · 书签 ${memberCount(state, group.id, sub.id)}`}
-                    accessories={[{ tag: group.name }]}
+                    title={`↳ ${categoryTitle(sub.id, sub.name)}`}
+                    subtitle={t`子分类 · 书签 ${memberCount(state, group.id, sub.id)}`}
+                    accessories={[{ tag: categoryTitle(group.id, group.name) }]}
                     actions={
                       <ActionPanel>
                         <Action
@@ -511,7 +511,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
       )}
 
       {ready && (
-        <List.Section title="图标">
+        <List.Section title={t("图标")}>
           <List.Item
             title={t("补全缺失图标")}
             subtitle={t("为无图标或文字占位的书签抓取 favicon 并写入 icons/")}
@@ -576,7 +576,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
       )}
 
       {ready && (
-        <List.Section title="导入导出">
+        <List.Section title={t("导入导出")}>
           <List.Item
             title={t("导入 JSON")}
             subtitle={t("先预览统计与警告，再逐项决定同 ID 差异；一次事务写入")}
@@ -616,7 +616,7 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
         </List.Section>
       )}
 
-      <List.Section title="AI（可选 BYOK）">
+      <List.Section title={t("AI（可选 BYOK）")}>
         <List.Item
           title={t`协议：${ai.protocol}`}
           subtitle={t`服务：${ai.baseUrl || t("未配置")} · 模型：${ai.model || t("未配置")}`}
@@ -823,7 +823,7 @@ function ConflictView({
   }
 
   return (
-    <List navigationTitle="选择要保留的版本">
+    <List navigationTitle={t("选择要保留的版本")}>
       <List.Section
         title={t`${conflict.candidates.length} 个并发版本`}
         subtitle={t("选择后返回上一页；全部冲突选择完才能应用")}
@@ -1020,8 +1020,8 @@ function ImportPreview({
   }
 
   return (
-    <List navigationTitle="导入预览">
-      <List.Section title="统计">
+    <List navigationTitle={t("导入预览")}>
+      <List.Section title={t("统计")}>
         <List.Item
           title={t`书签 ${plan.counts.bookmarks} · 一级分类 ${plan.counts.groups}`}
           subtitle={t`生成 ID ${plan.counts.generatedIds} · 缺失时间 ${plan.counts.missingTimes} · 与本地完全相同 ${plan.counts.identical}`}
@@ -1038,7 +1038,7 @@ function ImportPreview({
         />
       </List.Section>
       {plan.warnings.length > 0 && (
-        <List.Section title="警告">
+        <List.Section title={t("警告")}>
           {plan.warnings.map((warning) => (
             <List.Item key={warning} title={warning} icon={Icon.Warning} />
           ))}
@@ -1084,7 +1084,7 @@ function ImportPreview({
           ))}
         </List.Section>
       )}
-      <List.Section title="应用">
+      <List.Section title={t("应用")}>
         <List.Item
           title={t("应用导入")}
           subtitle={t`待提交实体 ${effective.length} · 未选择差异 ${remaining}`}
