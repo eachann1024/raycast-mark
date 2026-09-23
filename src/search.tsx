@@ -6,10 +6,10 @@ import {
   Alert,
   Detail,
   Form,
+  Grid,
   Icon,
   Keyboard,
   LocalStorage,
-  List,
   Toast,
   confirmAlert,
   environment,
@@ -271,9 +271,9 @@ export default function Command() {
 
   if (!root || !state) {
     return (
-      <List isLoading>
-        <List.EmptyView title="正在读取本地库" />
-      </List>
+      <Grid isLoading searchText={query} onSearchTextChange={setQuery}>
+        <Grid.EmptyView title={t("正在读取本地库")} />
+      </Grid>
     );
   }
 
@@ -491,7 +491,11 @@ export default function Command() {
           />
         )}
 
-        <Action.Push title={t("设置与数据")} icon={Icon.Gear} target={<ManageData onClose={load} />} />
+        <Action.Push
+          title={t("设置与数据")}
+          icon={Icon.Gear}
+          target={<ManageData onClose={load} />}
+        />
         <Action
           title={t("打开扩展设置")}
           icon={Icon.Gear}
@@ -503,83 +507,74 @@ export default function Command() {
   }
 
   const items = visible.items.map((bookmark) => (
-    <List.Item
+    <Grid.Item
       key={bookmark.id}
       id={bookmark.id}
       title={bookmark.title}
       subtitle={hostOf(bookmark.url)}
-      icon={listIcon(bookmark)}
-      accessories={[
-        ...(bookmark.isDeleted ? [{ tag: "回收站" }] : []),
-        ...(bookmark.tags.length
-          ? [
-              {
-                tag: `${bookmark.tags.length} 标签`,
-                tooltip: bookmark.tags.join("、"),
-              },
-            ]
-          : []),
-        ...(bookmark.visits ? [{ text: `${bookmark.visits} 次` }] : []),
-      ]}
+      content={listIcon(bookmark)}
+      keywords={[bookmark.url, bookmark.desc ?? "", ...bookmark.tags]}
+      accessory={bookmark.pinned ? { icon: Icon.Star, tooltip: t("收藏") } : undefined}
       actions={actionsFor(bookmark)}
     />
   ));
 
   return (
-    <List
+    <Grid
+      columns={5}
       isLoading={isLoading}
       filtering={false}
       searchText={query}
       onSearchTextChange={setQuery}
       searchBarPlaceholder={t("搜索标题、网址、描述或标签")}
       searchBarAccessory={
-        <List.Dropdown
-          tooltip="筛选范围"
+        <Grid.Dropdown
+          tooltip={t("筛选范围")}
           value={scope}
           onChange={setScope}
           storeValue
         >
-          <List.Dropdown.Item title="全部" value="all" icon={Icon.List} />
-          <List.Dropdown.Item title="收藏" value="favorites" icon={Icon.Star} />
-          <List.Dropdown.Item
-            title="最近使用"
+          <Grid.Dropdown.Item title={t("全部")} value="all" icon={Icon.List} />
+          <Grid.Dropdown.Item title={t("收藏")} value="favorites" icon={Icon.Star} />
+          <Grid.Dropdown.Item
+            title={t("最近使用")}
             value="recent"
             icon={Icon.ArrowClockwise}
           />
-          <List.Dropdown.Item title="回收站" value="trash" icon={Icon.Trash} />
+          <Grid.Dropdown.Item title={t("回收站")} value="trash" icon={Icon.Trash} />
           {libraryState.catalog.groups
             .filter(
               (group) =>
                 !group.isDeleted && group.id !== TRASH_LOCATION.groupId,
             )
             .map((group) => (
-              <List.Dropdown.Section key={group.id} title={group.name}>
+              <Grid.Dropdown.Section key={group.id} title={categoryTitle(group.id, group.name)}>
                 {group.children
                   .filter((sub) => !sub.isDeleted)
                   .map((sub) => (
-                    <List.Dropdown.Item
+                    <Grid.Dropdown.Item
                       key={`${group.id}/${sub.id}`}
                       value={locationValue({
                         groupId: group.id,
                         subGroupId: sub.id,
                       })}
-                      title={sub.name}
+                      title={categoryTitle(sub.id, sub.name)}
                     />
                   ))}
-              </List.Dropdown.Section>
+              </Grid.Dropdown.Section>
             ))}
-        </List.Dropdown>
+        </Grid.Dropdown>
       }
     >
       {visible.fallback ? (
-        <List.Section title="万能匹配回退" subtitle="本地没有搜索结果">
+        <Grid.Section title={t("万能匹配回退")}>
           {items}
-        </List.Section>
+        </Grid.Section>
       ) : (
         items
       )}
       {!items.length && (
-        <List.EmptyView
+        <Grid.EmptyView
           icon={Icon.Bookmark}
           title={
             query
@@ -680,7 +675,7 @@ export default function Command() {
           }
         />
       )}
-    </List>
+    </Grid>
   );
 }
 
