@@ -1,3 +1,4 @@
+import { categoryTitle, setLanguage, t } from "./i18n.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Action,
@@ -80,6 +81,7 @@ function inScope(bookmark: Bookmark, scope: string): boolean {
 
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
+  setLanguage(preferences.language);
   const { push } = useNavigation();
   const [root, setRoot] = useState<string>();
   const [state, setState] = useState<LibraryState>();
@@ -102,8 +104,8 @@ export default function Command() {
       if (library.status === "conflicted")
         await showToast({
           style: Toast.Style.Failure,
-          title: "存在未解决冲突，本次只读",
-          message: "请在 Manage Marks Data 中解决冲突后才能写入",
+          title: t("存在未解决冲突，本次只读"),
+          message: t("请在设置与数据中解决冲突后才能写入"),
         });
     } catch (error) {
       setFailure(failureMessage(error));
@@ -137,7 +139,7 @@ export default function Command() {
     } catch (error) {
       await showToast({
         style: Toast.Style.Failure,
-        title: "未写入",
+        title: t("未写入"),
         message: failureMessage(error),
       });
     }
@@ -154,7 +156,7 @@ export default function Command() {
     } catch (error) {
       await showToast({
         style: Toast.Style.Failure,
-        title: "无法打开",
+        title: t("无法打开"),
         message: failureMessage(error),
       });
       return false;
@@ -164,7 +166,7 @@ export default function Command() {
     } catch {
       await showToast({
         style: Toast.Style.Failure,
-        title: "无法打开链接",
+        title: t("无法打开链接"),
         message: bookmark.title,
       });
       return false;
@@ -179,13 +181,13 @@ export default function Command() {
       if (result.warning)
         await showToast({
           style: Toast.Style.Success,
-          title: "已打开并记录访问，请注意",
+          title: t("已打开并记录访问，请注意"),
           message: result.warning,
         });
     } catch (error) {
       await showToast({
         style: Toast.Style.Failure,
-        title: "已打开，但未能记录访问",
+        title: t("已打开，但未能记录访问"),
         message: failureMessage(error),
       });
     }
@@ -213,16 +215,16 @@ export default function Command() {
   if (failure) {
     return (
       <Detail
-        markdown={`# 无法读取本地库\n\n${failure}\n\n请确认数据目录存在且为专用目录（空或仅含 \`events\`），或在扩展设置中修改数据目录。切换目录不会搬迁或删除旧库。`}
+        markdown={t`# 无法读取本地库\n\n${failure}\n\n请确认数据目录存在且为专用目录（空或仅含 \`events\`），或在扩展设置中修改数据目录。切换目录不会搬迁或删除旧库。`}
         actions={
           <ActionPanel>
             <Action
-              title="重新加载"
+              title={t("重新加载")}
               icon={Icon.ArrowClockwise}
               onAction={load}
             />
             <Action
-              title="打开扩展设置"
+              title={t("打开扩展设置")}
               icon={Icon.Gear}
               onAction={openExtensionPreferences}
             />
@@ -249,16 +251,16 @@ export default function Command() {
       .join("\n");
     return (
       <Detail
-        markdown={`# 本地库已暂停写入\n\n检测到不可读或不安全的数据，不会以空库覆盖本地文件，也不会展示未经校验的数据。\n\n${issues}\n\n数据目录：\`${root}\``}
+        markdown={t`# 本地库已暂停写入\n\n检测到不可读或不安全的数据，不会以空库覆盖本地文件，也不会展示未经校验的数据。\n\n${issues}\n\n数据目录：\`${root}\``}
         actions={
           <ActionPanel>
             <Action
-              title="重新加载"
+              title={t("重新加载")}
               icon={Icon.ArrowClockwise}
               onAction={load}
             />
             <Action
-              title="打开扩展设置"
+              title={t("打开扩展设置")}
               icon={Icon.Gear}
               onAction={openExtensionPreferences}
             />
@@ -278,7 +280,7 @@ export default function Command() {
     return (
       <ActionPanel>
         <Action
-          title={fields.length ? "填写参数并打开" : "打开"}
+          title={fields.length ? t("填写参数并打开") : t("打开")}
           icon={Icon.Globe}
           onAction={() => {
             if (fields.length)
@@ -293,14 +295,14 @@ export default function Command() {
           }}
         />
         <Action.CopyToClipboard
-          title="复制 URL"
+          title={t("复制 URL")}
           content={bookmark.url}
           shortcut={Keyboard.Shortcut.Common.Copy}
         />
         {!conflicted && (
           <>
             <Action
-              title="新增书签"
+              title={t("新增书签")}
               icon={Icon.Plus}
               shortcut={Keyboard.Shortcut.Common.New}
               onAction={() =>
@@ -314,7 +316,7 @@ export default function Command() {
               }
             />
             <Action
-              title="编辑"
+              title={t("编辑")}
               icon={Icon.Pencil}
               shortcut={Keyboard.Shortcut.Common.Edit}
               onAction={() =>
@@ -330,7 +332,7 @@ export default function Command() {
             />
             {!bookmark.isDeleted && (
               <Action
-                title="管理分类位置"
+                title={t("管理分类位置")}
                 icon={Icon.Tag}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
                 onAction={() =>
@@ -349,7 +351,7 @@ export default function Command() {
         )}
         {!conflicted && (
           <Action
-            title={bookmark.pinned ? "取消收藏" : "加入收藏"}
+            title={bookmark.pinned ? t("取消收藏") : t("加入收藏")}
             icon={bookmark.pinned ? Icon.StarDisabled : Icon.Star}
             shortcut={Keyboard.Shortcut.Common.Pin}
             onAction={() =>
@@ -362,7 +364,7 @@ export default function Command() {
                   }),
                 ],
                 undefined,
-                bookmark.pinned ? "已取消收藏" : "已加入收藏",
+                bookmark.pinned ? t("已取消收藏") : t("已加入收藏"),
                 bookmark.title,
               )
             }
@@ -371,29 +373,29 @@ export default function Command() {
         {!conflicted &&
           (bookmark.isDeleted ? (
             <Action
-              title="恢复"
+              title={t("恢复")}
               icon={Icon.ArrowCounterClockwise}
               onAction={() =>
                 void applyCommit(
                   [restoreBookmark(libraryState, bookmark)],
                   undefined,
-                  "已恢复",
+                  t("已恢复"),
                   bookmark.title,
                 )
               }
             />
           ) : (
             <Action
-              title="移入回收站"
+              title={t("移入回收站")}
               icon={Icon.Trash}
               style={Action.Style.Destructive}
               shortcut={Keyboard.Shortcut.Common.Remove}
               onAction={async () => {
                 const confirmed = await confirmAlert({
-                  title: "移入回收站？",
-                  message: `${bookmark.title} 将移入回收站，之后可恢复。`,
+                  title: t("移入回收站？"),
+                  message: t`${bookmark.title} 将移入回收站，之后可恢复。`,
                   primaryAction: {
-                    title: "移入回收站",
+                    title: t("移入回收站"),
                     style: Alert.ActionStyle.Destructive,
                   },
                 });
@@ -401,7 +403,7 @@ export default function Command() {
                   void applyCommit(
                     [deleteBookmark(libraryState, bookmark)],
                     undefined,
-                    "已移入回收站",
+                    t("已移入回收站"),
                     bookmark.title,
                   );
               }}
@@ -422,7 +424,7 @@ export default function Command() {
         )}
         {!conflicted && (
           <Action
-            title="刷新图标"
+            title={t("刷新图标")}
             icon={Icon.Image}
             shortcut={{ modifiers: ["cmd", "opt"], key: "i" }}
             onAction={() =>
@@ -443,13 +445,13 @@ export default function Command() {
                       }),
                     ],
                     undefined,
-                    "已刷新图标",
+                    t("已刷新图标"),
                     bookmark.title,
                   );
                 } catch (error) {
                   await showToast({
                     style: Toast.Style.Failure,
-                    title: "刷新图标失败",
+                    title: t("刷新图标失败"),
                     message: failureMessage(error),
                   });
                 }
@@ -459,7 +461,7 @@ export default function Command() {
         )}
 
         <Action
-          title="打开扩展设置"
+          title={t("打开扩展设置")}
           icon={Icon.Gear}
           shortcut={{ modifiers: ["cmd", "shift"], key: "," }}
           onAction={openExtensionPreferences}
@@ -497,7 +499,7 @@ export default function Command() {
       filtering={false}
       searchText={query}
       onSearchTextChange={setQuery}
-      searchBarPlaceholder="搜索标题、网址、描述或标签"
+      searchBarPlaceholder={t("搜索标题、网址、描述或标签")}
       searchBarAccessory={
         <List.Dropdown
           tooltip="筛选范围"
@@ -549,22 +551,22 @@ export default function Command() {
           icon={Icon.Bookmark}
           title={
             query
-              ? "没有匹配的书签"
+              ? t("没有匹配的书签")
               : scope === "trash"
-                ? "回收站为空"
-                : "还没有书签"
+                ? t("回收站为空")
+                : t("还没有书签")
           }
           description={
             query
-              ? "本地未匹配到结果，也不会注册任何全局搜索入口"
-              : "用“新增书签”命令或下面的操作添加第一个书签"
+              ? t("本地未匹配到结果，也不会注册任何全局搜索入口")
+              : t("在下方新增第一个书签")
           }
           actions={
             <ActionPanel>
               {!conflicted && looksLikeHttpUrl(query) && (
                 <>
                   <Action
-                    title="保存此链接"
+                    title={t("保存此链接")}
                     icon={Icon.Plus}
                     onAction={() => {
                       const url = query.trim();
@@ -579,7 +581,7 @@ export default function Command() {
                     }}
                   />
                   <Action
-                    title="AI 保存此链接"
+                    title={t("AI 保存此链接")}
                     icon={Icon.Wand}
                     onAction={() =>
                       void (async () => {
@@ -604,7 +606,7 @@ export default function Command() {
                         } catch (error) {
                           await showToast({
                             style: Toast.Style.Failure,
-                            title: "AI 不可用，已降级为普通保存",
+                            title: t("AI 不可用，已降级为普通保存"),
                             message: failureMessage(error),
                           });
                         }
@@ -623,7 +625,7 @@ export default function Command() {
               )}
               {!conflicted && (
                 <Action
-                  title="新增书签"
+                  title={t("新增书签")}
                   icon={Icon.Plus}
                   onAction={() =>
                     push(
@@ -637,7 +639,7 @@ export default function Command() {
                 />
               )}
               <Action
-                title="打开扩展设置"
+                title={t("打开扩展设置")}
                 icon={Icon.Gear}
                 onAction={openExtensionPreferences}
               />
@@ -661,11 +663,11 @@ function TemplateForm({
   const { pop } = useNavigation();
   return (
     <Form
-      navigationTitle={`打开：${bookmark.title}`}
+      navigationTitle={t`打开：${bookmark.title}`}
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title="打开"
+            title={t("打开")}
             icon={Icon.Globe}
             onSubmit={async (values: Form.Values) => {
               const succeeded = await onSubmit(
@@ -679,13 +681,13 @@ function TemplateForm({
         </ActionPanel>
       }
     >
-      <Form.Description title="模板" text={bookmark.url} />
+      <Form.Description title={t("模板")} text={bookmark.url} />
       {fields.map((field) => (
         <Form.TextField
           key={field}
           id={field}
           title={`{${field}}`}
-          placeholder="参数值（会做 URL 编码）"
+          placeholder={t("参数值（会做 URL 编码）")}
         />
       ))}
     </Form>
@@ -710,18 +712,18 @@ function LocationsForm({
   const options = locationOptions(state.catalog);
   return (
     <Form
-      navigationTitle="管理分类位置"
+      navigationTitle={t("管理分类位置")}
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title="保存位置"
+            title={t("保存位置")}
             icon={Icon.Checkmark}
             onSubmit={async () => {
               if (!values.length) {
                 await showToast({
                   style: Toast.Style.Failure,
-                  title: "至少保留一个分类位置",
-                  message: "如需移出所有分类，请使用“移入回收站”",
+                  title: t("至少保留一个分类位置"),
+                  message: t("如需移出所有分类，请使用“移入回收站”"),
                 });
                 return;
               }
@@ -739,14 +741,14 @@ function LocationsForm({
                 onSaved(result.state);
                 await showToast({
                   style: Toast.Style.Success,
-                  title: "已更新分类位置",
+                  title: t("已更新分类位置"),
                   message: result.warning ?? bookmark.title,
                 });
                 pop();
               } catch (error) {
                 await showToast({
                   style: Toast.Style.Failure,
-                  title: "未写入",
+                  title: t("未写入"),
                   message: failureMessage(error),
                 });
               }
@@ -756,15 +758,15 @@ function LocationsForm({
       }
     >
       <Form.Description
-        title="书签"
+        title={t("书签")}
         text={`${bookmark.title}\n${bookmark.url}`}
       />
       <Form.TagPicker
         id="locations"
-        title="分类位置（可多选）"
+        title={t("分类位置（可多选）")}
         value={values}
         onChange={setValues}
-        placeholder="选择或搜索分类"
+        placeholder={t("选择或搜索分类")}
       >
         {options.map((option) => (
           <Form.TagPicker.Item
