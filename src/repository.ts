@@ -33,6 +33,7 @@ import type {
   Mutation,
   Visit,
 } from "./model.ts";
+import { withSharedJsonWrite } from "./shared-json-storage.ts";
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -561,7 +562,7 @@ export async function commit(
   directory: string,
   request: CommitRequest,
 ): Promise<CommitResult> {
-  return writeTransaction(directory, request, false);
+  return withSharedJsonWrite(directory, () => writeTransaction(directory, request, false));
 }
 /** Resolutions are complete chosen snapshots (including tombstones), based on ALL current heads. */
 export async function resolveConflicts(
@@ -569,9 +570,9 @@ export async function resolveConflicts(
   resolutions: Mutation[],
   expectedHeads: Heads,
 ): Promise<CommitResult> {
-  return writeTransaction(
+  return withSharedJsonWrite(directory, () => writeTransaction(
     directory,
     { mutations: resolutions, expectedHeads },
     true,
-  );
+  ));
 }

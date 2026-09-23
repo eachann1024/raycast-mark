@@ -42,6 +42,7 @@ import {
   replayEvents,
   resolveConflicts,
 } from "../src/repository.ts";
+import { setSharedJsonSource, setSharedJsonStorage, withSharedJsonWrite } from "../src/shared-json-storage.ts";
 
 const bookmark = (id = "b1"): Bookmark => ({
   id,
@@ -87,6 +88,25 @@ async function raw(dir: string, e: LibraryEvent) {
 function errorCode(code: string) {
   return (e: unknown) => (e as { code?: string }).code === code;
 }
+
+test("shared JSON: existing lock is never removed by another writer", async () =>
+  fixture(async (dir, parent) => {
+    const items = new Map<string, string>();
+    setSharedJsonStorage({
+      getItem: async (key: string) => items.get(key),
+      setItem: async (key: string, value: string) => { items.set(key, value); },
+    } as unknown as Parameters<typeof setSharedJsonStorage>[0]);
+    try {
+      const file = path.join(parent, "shared.json");
+      const initial = JSON.stringify({ schemaVersion: 1, source: "raycast-mark", groups: emptyCatalog().groups, bookmarks: [] });
+      await fs.writeFile(file, initial);
+      await setSharedJsonSource(file, initial, initial);
+      await fs.writeFile(`${file}.lock`, "another writer");
+      await assert.rejects(withSharedJsonWrite(dir, async () => ({ state: await readLibrary(dir) })));
+      assert.equal(await fs.readFile(`${file}.lock`, "utf8"), "another writer");
+      assert.equal(await fs.readFile(file, "utf8"), initial);
+    } finally { setSharedJsonStorage(); }
+  }));
 
 test("templateFields / resolveLaunchUrl: multiple parameters, safe encoding and authority rejection", () => {
   assert.deepEqual(

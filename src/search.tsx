@@ -1,5 +1,5 @@
 import { categoryTitle, setLanguage, t } from "./i18n.ts";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Action,
   ActionPanel,
@@ -8,6 +8,7 @@ import {
   Form,
   Icon,
   Keyboard,
+  LocalStorage,
   List,
   Toast,
   confirmAlert,
@@ -37,6 +38,10 @@ import { ensureIconForBookmark, iconImageSource } from "./icon-service.ts";
 import { commit, configureDirectory, readLibrary } from "./repository.ts";
 import { aiConfigFromPreferences, suggestMetadata } from "./ai.ts";
 import ManageData from "./manage-data.tsx";
+import { refreshSharedJson } from "./shared-json.tsx";
+import { setSharedJsonStorage } from "./shared-json-storage.ts";
+
+setSharedJsonStorage(LocalStorage);
 
 function listIcon(bookmark: Bookmark) {
   const bound = iconImageSource(bookmark.icon);
@@ -88,6 +93,7 @@ export default function Command() {
   const [isLoading, setIsLoading] = useState(true);
   const [scope, setScope] = useState("all");
   const [query, setQuery] = useState("");
+  const sharedError = useRef("");
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -96,10 +102,14 @@ export default function Command() {
         preferences.dataDirectory,
         environment.supportPath,
       );
-      const library = await readLibrary(directory);
+      let library = await readLibrary(directory);
+      setRoot(directory);
+      setState(library);
+      if (library.status === "ready") library = await refreshSharedJson(directory, library);
       setRoot(directory);
       setState(library);
       setFailure(undefined);
+      sharedError.current = "";
       if (library.status === "conflicted")
         await showToast({
           style: Toast.Style.Failure,
@@ -115,6 +125,31 @@ export default function Command() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!root || !state || state.status !== "ready") return;
+    const timer = setInterval(() => {
+      void (async () => {
+        try {
+          const current = await readLibrary(root);
+          if (current.status !== "ready") return;
+          const next = await refreshSharedJson(root, current);
+          if (next !== current) setState(next);
+          if (sharedError.current) {
+            sharedError.current = "";
+            setFailure(undefined);
+          }
+        } catch (error) {
+          const message = failureMessage(error);
+          if (sharedError.current !== message) {
+            sharedError.current = message;
+            setFailure(t`共享 JSON 同步已暂停：${message}`);
+          }
+        }
+      })();
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [root, state]);
 
   async function applyCommit(
     mutations: Mutation[],

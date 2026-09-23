@@ -29,6 +29,7 @@ import {
 } from "./import-export.ts";
 import type { ImportDecisions, ImportPlan } from "./import-export.ts";
 import { backfillMissingIcons } from "./icon-service.ts";
+import SharedJsonForm from "./shared-json.tsx";
 import {
   bookmarkMutation,
   catalogMutation,
@@ -278,7 +279,12 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
                 icon={Icon.Checkmark}
                 onAction={() => push(<DirectoryForm />)}
               />
-              <Action.CopyToClipboard title="复制数据目录" content={root} />
+              <Action.Push
+                title={t("连接共享 JSON 数据源…")}
+                icon={Icon.Link}
+                target={<SharedJsonForm root={root} state={state} onSaved={setState} />}
+              />
+              <Action.CopyToClipboard title={t("复制数据目录")} content={root} />
               <Action
                 title={t("重新加载")}
                 icon={Icon.ArrowClockwise}
