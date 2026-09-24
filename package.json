@@ -21,24 +21,6 @@
   ],
   "preferences": [
     {
-      "name": "language",
-      "title": "Language",
-      "description": "Choose the language for extension screens and messages. English is the default.",
-      "type": "dropdown",
-      "required": false,
-      "default": "en",
-      "data": [
-        {
-          "title": "English",
-          "value": "en"
-        },
-        {
-          "title": "Simplified Chinese",
-          "value": "zh-Hans"
-        }
-      ]
-    },
-    {
       "name": "dataDirectory",
       "title": "Dedicated Data Directory",
       "description": "Dedicated data directory. Leave blank to use supportPath/marks-library.",

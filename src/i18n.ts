@@ -510,33 +510,26 @@ const english: Record<string, string> = {
   "本地事务已成功，但共享 JSON 未更新：":
     "Local transaction succeeded, but shared JSON was not updated:",
 };
-let language: "en" | "zh-Hans" = "en";
-export function setLanguage(value?: string) {
-  language = value === "zh-Hans" ? "zh-Hans" : "en";
-}
 export function t(value: string): string;
 export function t(parts: TemplateStringsArray, ...values: unknown[]): string;
 export function t(
   value: string | TemplateStringsArray,
   ...values: unknown[]
 ): string {
-  if (typeof value === "string")
-    return language === "zh-Hans" ? value : (english[value] ?? value);
+  if (typeof value === "string") return english[value] ?? value;
   return value.reduce(
     (result, part, index) =>
       result +
-      (language === "zh-Hans"
-        ? part
-        : (english[part] ??
-          part
-            .replaceAll("？", "?")
-            .replaceAll("（", "(")
-            .replaceAll("）", ")")
-            .replaceAll("；", "; ")
-            .replaceAll("、", ", ")
-            .replaceAll("，", ", ")
-            .replaceAll("「", "“")
-            .replaceAll("」", "”"))) +
+      (english[part] ??
+        part
+          .replaceAll("？", "?")
+          .replaceAll("（", "(")
+          .replaceAll("）", ")")
+          .replaceAll("；", "; ")
+          .replaceAll("、", ", ")
+          .replaceAll("，", ", ")
+          .replaceAll("「", "“")
+          .replaceAll("」", "”")) +
       (index < values.length ? String(values[index]) : ""),
     "",
   );

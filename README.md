@@ -24,7 +24,7 @@ To import the source extension, use **Raycast → Import Extension** (a Raycast 
 | --- | --- |
 | Search Marks | Grid search over titles, URLs, descriptions, and tags; filter all/favorites/recent/trash/categories; add bookmarks and open Settings & Data for categories, JSON transfer, conflicts, and directory options. |
 
-The extension defaults to English and offers Simplified Chinese in its language preference.
+The extension interface is in English; bookmarks can still contain Chinese text.
 
 ## Local data directory
 

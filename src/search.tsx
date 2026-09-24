@@ -1,4 +1,4 @@
-import { categoryTitle, setLanguage, t } from "./i18n.ts";
+import { categoryTitle, t } from "./i18n.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Action,
@@ -85,7 +85,6 @@ function inScope(bookmark: Bookmark, scope: string): boolean {
 
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
-  setLanguage(preferences.language);
   const { push } = useNavigation();
   const [root, setRoot] = useState<string>();
   const [state, setState] = useState<LibraryState>();
