@@ -27,7 +27,7 @@ import {
   TRASH_LOCATION,
 } from "./model.ts";
 import type { Bookmark, Catalog, LibraryState, Location } from "./model.ts";
-import { fetchAndPersistIcon } from "./icon-service.ts";
+import { fetchAndPersistIcon, fetchPageDescription } from "./icon-service.ts";
 import { commit } from "./repository.ts";
 
 /** Stable failure text for the three commands; never includes API keys or raw responses. */
@@ -204,6 +204,24 @@ export function BookmarkForm({
     }
   }
 
+  async function fillDescription() {
+    if (desc.trim()) {
+      await showToast({ style: Toast.Style.Failure, title: t("请先清空已有描述") });
+      return;
+    }
+    try {
+      const normalized = normalizeBookmarkUrl(url);
+      const description = await fetchPageDescription(normalized);
+      if (description) setDesc(description);
+      await showToast({
+        style: description ? Toast.Style.Success : Toast.Style.Failure,
+        title: description ? t("已填入网页描述") : t("未找到网页描述"),
+      });
+    } catch (error) {
+      await showToast({ style: Toast.Style.Failure, title: t("获取描述失败"), message: failureMessage(error) });
+    }
+  }
+
   async function requestSuggestion() {
     const selected: SelectedFields = {};
     if (aiFields.includes("title") && title.trim())
@@ -302,6 +320,11 @@ export function BookmarkForm({
             title={bookmark ? t("保存修改") : t("新增书签")}
             icon={Icon.Checkmark}
             onSubmit={save}
+          />
+          <Action
+            title={t("从网页获取描述")}
+            icon={Icon.Download}
+            onAction={fillDescription}
           />
           <Action
             title={t("AI 建议（BYOK）")}

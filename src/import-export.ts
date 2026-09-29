@@ -145,12 +145,15 @@ export function previewJsonImport(
       "id",
       "name",
       "children",
+      "orderIndex",
       "createdAt",
       "updatedAt",
       "serverUpdatedAt",
       "lastSyncedAt",
       "isDeleted",
     ]);
+    // uTools export includes a presentation index; catalog order carries it internally.
+    if (group.orderIndex !== undefined) timestamp(group.orderIndex);
     const groupId = makeId(group.id);
     const createdAt = time(group.createdAt, now);
     return {

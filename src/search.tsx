@@ -256,6 +256,7 @@ export default function Command() {
             <Action
               title={t("重新加载")}
               icon={Icon.ArrowClockwise}
+              shortcut={Keyboard.Shortcut.Common.Refresh}
               onAction={load}
             />
             <Action
@@ -263,13 +264,6 @@ export default function Command() {
               icon={Icon.Gear}
               onAction={openExtensionPreferences}
             />
-            {root && state && (
-              <Action.Push
-                title={t("设置与数据")}
-                icon={Icon.Gear}
-                target={<ManageData onClose={load} />}
-              />
-            )}
           </ActionPanel>
         }
       />
@@ -296,14 +290,10 @@ export default function Command() {
         markdown={t`# 本地库已暂停写入\n\n检测到不可读或不安全的数据，不会以空库覆盖本地文件，也不会展示未经校验的数据。\n\n${issues}\n\n数据目录：\`${root}\``}
         actions={
           <ActionPanel>
-            <Action.Push
-              title={t("设置与数据")}
-              icon={Icon.Gear}
-              target={<ManageData onClose={load} />}
-            />
             <Action
               title={t("重新加载")}
               icon={Icon.ArrowClockwise}
+              shortcut={Keyboard.Shortcut.Common.Refresh}
               onAction={load}
             />
             <Action
@@ -502,17 +492,6 @@ export default function Command() {
           />
         )}
 
-        <Action.Push
-          title={t("设置与数据")}
-          icon={Icon.Gear}
-          target={<ManageData onClose={load} />}
-        />
-        <Action
-          title={t("打开扩展设置")}
-          icon={Icon.Gear}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "," }}
-          onAction={openExtensionPreferences}
-        />
       </ActionPanel>
     );
   }
@@ -687,16 +666,6 @@ export default function Command() {
                   }
                 />
               )}
-              <Action
-                title={t("打开扩展设置")}
-                icon={Icon.Gear}
-                onAction={openExtensionPreferences}
-              />
-              <Action.Push
-                title={t("设置与数据")}
-                icon={Icon.Gear}
-                target={<ManageData onClose={load} />}
-              />
             </ActionPanel>
           }
         />

@@ -23,8 +23,8 @@
     {
       "name": "dataDirectory",
       "title": "Dedicated Data Directory",
-      "description": "Dedicated data directory. Leave blank to use supportPath/marks-library.",
-      "type": "textfield",
+      "description": "Choose an existing dedicated directory. Leave blank to use supportPath/marks-library.",
+      "type": "directory",
       "required": false
     },
     {

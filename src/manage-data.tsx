@@ -20,7 +20,6 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { aiConfigFromPreferences } from "./ai.ts";
 import { failureMessage } from "./bookmark-form.tsx";
 import {
   applyJsonImport,
@@ -248,12 +247,11 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
 
   const ready = state.status === "ready";
   const conflicted = state.conflicts.length > 0;
-  const ai = aiConfigFromPreferences(preferences);
 
   return (
     <List
       isLoading={isLoading}
-      navigationTitle={t("设置与数据")}
+      navigationTitle={t("管理分类与数据")}
       searchBarPlaceholder={t("搜索分类或功能")}
     >
       <List.Section title={t("数据目录")}>
@@ -275,11 +273,6 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
           ]}
           actions={
             <ActionPanel>
-              <Action
-                title={t("打开扩展设置（修改数据目录）")}
-                icon={Icon.Gear}
-                onAction={openExtensionPreferences}
-              />
               <Action
                 title={t("校验自选目录")}
                 icon={Icon.Checkmark}
@@ -631,26 +624,6 @@ export default function Command({ onClose }: { onClose?: () => void } = {}) {
         </List.Section>
       )}
 
-      <List.Section title={t("AI（可选 BYOK）")}>
-        <List.Item
-          title={t`协议：${ai.protocol}`}
-          subtitle={t`服务：${ai.baseUrl || t("未配置")} · 模型：${ai.model || t("未配置")}`}
-          icon={Icon.Stars}
-          accessories={[
-            { text: ai.apiKey ? t("已配置该协议 Key") : t("缺少该协议 Key") },
-            { text: t("仅在你主动发送时请求") },
-          ]}
-          actions={
-            <ActionPanel>
-              <Action
-                title={t("打开扩展设置")}
-                icon={Icon.Gear}
-                onAction={openExtensionPreferences}
-              />
-            </ActionPanel>
-          }
-        />
-      </List.Section>
     </List>
   );
 }

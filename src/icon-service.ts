@@ -269,6 +269,28 @@ function extractIconHrefs(html: string, baseUrl: string): string[] {
   return [...new Set(hrefs)];
 }
 
+export async function fetchPageDescription(pageUrl: string): Promise<string | null> {
+  const target = normalizeTargetUrl(pageUrl);
+  if (!target || /\{[^}]+\}/.test(pageUrl)) return null;
+  const result = await fetchBinary(target, MAX_HTML_BYTES, "text/html");
+  if (!result || !/text\/html|application\/xhtml/i.test(result.contentType)) return null;
+  const html = result.bytes.toString("utf8");
+  for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
+    const attributes = Object.fromEntries(
+      [...tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(
+        ([, key, double, single]) => [key!.toLowerCase(), double ?? single ?? ""],
+      ),
+    );
+    if (
+      attributes.name?.toLowerCase() !== "description" &&
+      attributes.property?.toLowerCase() !== "og:description"
+    ) continue;
+    const description = decodeHtmlEntities(attributes.content ?? "").replace(/\s+/g, " ").trim();
+    if (description) return description.slice(0, 1000);
+  }
+  return null;
+}
+
 async function discoverIconUrls(pageUrl: string): Promise<string[]> {
   const htmlResult = await fetchBinary(
     pageUrl,
